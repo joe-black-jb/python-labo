@@ -1,0 +1,9 @@
+.venv
+1_Image_Recognition/myenv
+*.jpg
+*.avi
+*.csv
+*.xlsx
+*.xml
+*.dat
+PKSHA
