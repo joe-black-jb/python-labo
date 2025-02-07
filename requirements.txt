@@ -16,3 +16,4 @@ mecab-python3
 unidic-lite
 pandas
 tensorflow
+chardet

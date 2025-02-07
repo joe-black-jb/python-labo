@@ -6,4 +6,6 @@
 *.xlsx
 *.xml
 *.dat
+*.json
+*.db
 PKSHA

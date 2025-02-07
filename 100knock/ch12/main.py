@@ -5,6 +5,9 @@ import pandas as pd
 import numpy as np
 import math
 import hashlib
+import chardet
+import json
+import sqlite3
 
 # data = pd.read_excel("12-1.xlsx")
 # # print(data)
@@ -461,3 +464,203 @@ city.loc[0, "市区町村"] = "H市"
 
 
 ### 放課後ノック117 ###
+# '''
+# csv が UTF-8 以外の文字コードで保存されていた場合の対処
+
+# 文字コード判定ライブラリ「chardet」を使用する
+# ※ chardet: char detector の略
+# '''
+
+# input_sjis = pd.read_csv("12-7-1.csv")
+# input_utf16 = pd.read_csv("12-7-2.csv")
+# input_eucjp = pd.read_csv("12-7-3.csv")
+
+# ''' with 文
+# - Python の文法の1つ
+# - 任意の処理の前処理、後処理を自動で行う
+#     - ファイルの操作などによく使用される
+#         - ファイルを開く
+#         - 読み書きする
+#         - ファイルを閉じる
+# - open()
+#     Args:
+#         file: ファイル
+#         mode: モード
+#             "r": read (default)
+#             "w": write
+#             "rb": read (binary mode)
+#                   テキストではなくバイトデータとして扱う
+# '''
+
+# df = pd.DataFrame()
+
+# with open("12-7-1.csv", "rb") as file:
+#     contents = file.read()
+#     enc = chardet.detect(contents)["encoding"]
+#     df = pd.concat([df, pd.read_csv("12-7-1.csv", encoding=enc)])
+
+# files = ['12-7-1.csv', '12-7-2.csv', '12-7-3.csv']
+# df = pd.DataFrame()
+
+# for file in files:
+#   # バイナリでファイルを開く
+#   with open(file, mode='rb') as f:
+#     contents = f.read()
+#     enc = chardet.detect(contents)['encoding']
+#     # 判明した文字コードでファイルを読み込む
+#     df = pd.concat([df, pd.read_csv(file, encoding=enc)])
+
+# print(df)
+
+
+
+### 放課後ノック118 ###
+# '''
+# 2つの異なるIoTセンサーのログを取得し加工する
+
+# 2つは別のセンサーのため取得周期にズレが生じている
+# => データを加工し取得周期のズレを修正する (線形補間を利用)
+
+# 【線形補間 (linear interpolation) とは】
+# 前後の値をもとにその間にある値を線形的に補間すること
+# ※ 補間: 間を埋めること
+
+# [例]
+# (x, y) = (1, 4) と (3, 8) がある時、x が 2 だったら y に 6 を入れる
+# '''
+
+# s1 = pd.read_csv("12-8-1.csv")
+# s2 = pd.read_csv("12-8-2.csv")
+# # print(s1.head())
+# # print(s2.head())
+# # print(len(s1))
+# # print(len(s2))
+
+# # df を結合
+# new_s = pd.concat([s1, s2])
+# # print(len(new_s))
+# # print(new_s.head())
+# # time_stamp の昇順でソート
+# new_s.sort_values("time_stamp", inplace=True)
+# # print(new_s.head())
+
+# # 欠損値を線形補間
+# new_s.interpolate(method="linear", inplace=True)
+
+# # 1行目は前のデータがなく補間できないため 0 を入れる
+# new_s.iat[0, 1] = 0
+# new_s.iat[0, 2] = 0
+
+# print(new_s.head())
+
+
+
+# ### 放課後ノック119 ###
+# '''
+# csv データを JSON形式に変換する
+# '''
+
+# input_csv = pd.read_csv("12-9.csv")
+# # print(input_csv.head())
+# ''' df.to_json()
+# df をjsonに変形し出力する
+
+# Args:
+#     path_or_buf: 出力するファイルパス
+# '''
+# # input_csv.to_json("12-9-output.json")
+
+# # JSON形式のファイルを辞書形式で読み込み
+# ''' json.load() と json.loads() の違い
+
+# 共通
+#     json 形式を Python の辞書形式に変換する
+# json.load()
+#     第一引数に大体ファイルをとるはず（str は取れない）
+
+# json.loads()
+#     第一引数に str を取る
+# '''
+# # with open("12-9-output.json") as f:
+# #     dict_json = json.load(f)
+
+# # print(dict_json)
+# # print(dict_json["order_id"]["0"])
+
+# ## json.load(), json.loads() の練習
+# json_s = '{"order_id": {"0": 79339111, "1": 18941733, "2": 56217880}}'
+# result = json.loads(json_s)
+# print(result)
+
+
+
+# ### 放課後ノック120 ###
+# '''
+# - SQLite を構築
+# - csv を読み込み SQLite に登録する
+# - DB から SQL でデータを抽出し出力
+# '''
+# # print(f"SQLite3 version: {sqlite3.version}")
+
+# # DB 接続
+# conn = sqlite3.connect("example.db")
+
+# # カーソルオブジェクトを作成
+# # カーソルオブジェクト: SQLクエリから結果を取得するために必要
+# cursor = conn.cursor()
+
+# # テーブルを作成
+# cursor.execute('''
+#     CREATE TABLE IF NOT EXISTS orders (
+#         order_id TEXT PRIMARY KEY,
+#         customer_id TEXT,
+#         order_accept_date TEXT,
+#         total_amount INTEGER
+#     );
+# ''')
+
+# # 変更を保存
+# conn.commit()
+
+# input_orders = pd.read_csv("12-9.csv")
+# print(input_orders.head())
+
+# #df を sqlite3 に登録
+# ''' df.to_sql()
+# df に格納された情報を SQL DB に登録する
+
+# Args:
+#     name(str): テーブル名
+#     con(str | Connection): sqlite3 connection
+#     if_exists
+#         'fail' (default) : すでにテーブルがある場合、エラーを発生させる
+#         'replace'        : すでにテーブルがある場合、新しい値を登録する前にテーブルを削除する
+#         'append'         : すでにテーブルがある場合、既存のテーブルに値を追加する
+# '''
+# input_orders.to_sql("orders", conn, if_exists="replace", index=None)
+
+# # # テーブルの中身を確認
+# # input_orders_check = pd.read_sql("SELECT * FROM orders", conn)
+# # print(input_orders_check)
+
+
+# # DB からデータを取得し、結果を df 型で受け取る
+# sql = "SELECT * FROM orders"
+
+# ''' pd.read_sql_query()
+# SQLクエリを実行し、結果を df 型に代入する
+
+# Args:
+#     sql(str)            : SQLクエリ
+#     conn(SQLConnection) : sql connection
+# '''
+# orders_df = pd.read_sql_query(sql, conn)
+
+# # csv ファイルに出力
+# orders_df.to_csv("12-10_output.csv", index=False)
+
+
+# # 変更を保存し接続を閉じる
+# conn.commit()
+# conn.close()
+
